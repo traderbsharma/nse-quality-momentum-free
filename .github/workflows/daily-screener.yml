@@ -1,0 +1,37 @@
+name: Daily NSE Quality Momentum Screener
+
+on:
+  schedule:
+    # 13:17 UTC = 18:47 India time. GitHub schedule may be delayed.
+    - cron: "17 13 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-nse-screener
+  cancel-in-progress: false
+
+jobs:
+  screen:
+    # Standard GitHub-hosted runner use is free for public repositories.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run screener
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          BENCHMARK_TICKER: ^CRSLDX
+          MINIMUM_DATA_COVERAGE: "0.80"
+        run: python screener.py
